@@ -68,7 +68,7 @@
     <p class="m">Dashboard baca fail dari repo private anda. Token disimpan dalam iPad ni sahaja.</p>
     <label>Nama akaun GitHub<input id="fOwner" autocomplete="off" autocapitalize="off" placeholder="contoh: reirarich"></label>
     <label>Nama repo<input id="fRepo" autocomplete="off" autocapitalize="off" value="my-company"></label>
-    <label>Branch<input id="fBranch" autocomplete="off" autocapitalize="off" value="main"></label>
+    <label>Branch (auto = pilih yang paling baru)<input id="fBranch" autocomplete="off" autocapitalize="off" value="auto"></label>
     <label>Token (read-only)<input id="fToken" type="password" autocomplete="off" autocapitalize="off" placeholder="github_pat_…"></label>
     <div class="btns"><button type="submit">Simpan &amp; sambung</button><button type="button" class="ghost" id="forget">Padam tetapan</button></div>
   </form>
@@ -128,7 +128,28 @@ const DEMO = {
 const KEY='aiOfficeSettings';
 let cfg=null, timer=null;
 try{cfg=JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){}
-const api=(path)=>`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(cfg.branch||'main')}`;
+if(cfg && !cfg.v){cfg.branch='auto';cfg.v=2;try{localStorage.setItem(KEY,JSON.stringify(cfg));}catch(e){}}
+let activeBranch='main'; const shaDate={};
+async function ghApi(path){
+  const r=await fetch(`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/${path}`,{cache:'no-store',headers:{Authorization:'Bearer '+cfg.token,Accept:'application/vnd.github+json'}});
+  if(r.status===401) throw new Error('Token salah atau dah tamat tempoh. Tekan ⚙ Tetapan dan masukkan token baru.');
+  if(!r.ok) throw new Error('GitHub error '+r.status);
+  return r.json();
+}
+async function pickBranch(){
+  const b=(cfg.branch||'auto').trim();
+  if(b && b.toLowerCase()!=='auto'){activeBranch=b;return;}
+  const list=await ghApi('branches?per_page=100');
+  const cand=list.filter(x=>x.name==='main'||x.name.startsWith('claude/'));
+  let best=null,bestT=0;
+  for(const c of cand){
+    const sha=c.commit.sha;
+    if(!shaDate[sha]){const cm=await ghApi('commits/'+sha);shaDate[sha]=Date.parse(cm.commit.committer.date)||0;}
+    if(shaDate[sha]>bestT){bestT=shaDate[sha];best=c.name;}
+  }
+  activeBranch=best||'main';
+}
+const api=(path)=>`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(activeBranch)}`;
 async function gh(path,raw=true){
   const r=await fetch(api(path),{cache:'no-store',headers:{Authorization:'Bearer '+cfg.token,Accept:raw?'application/vnd.github.raw+json':'application/vnd.github+json'}});
   if(r.status===404) return null;
@@ -446,10 +467,11 @@ function render(d){
 async function tick(){
   if(!cfg) return;
   try{
+    await pickBranch();
     const inbox=await readText('inbox.md');
     if(inbox===null) throw new Error('Tak jumpa inbox.md. Semak nama akaun, repo dan branch dalam ⚙ Tetapan.');
     render(await loadReal());
-    document.getElementById('src').textContent='Dikemas kini '+new Date().toLocaleTimeString('ms-MY');
+    document.getElementById('src').textContent='Dikemas kini '+new Date().toLocaleTimeString('ms-MY')+' · '+activeBranch;
     document.getElementById('err').style.display='none';
   }catch(e){ showErr(e.message); }
 }
@@ -457,7 +479,7 @@ function showErr(m){const e=document.getElementById('err');e.textContent=m;e.sty
 const $=id=>document.getElementById(id);
 function openSettings(){
   $('setup').style.display='block';
-  if(cfg){$('fOwner').value=cfg.owner;$('fRepo').value=cfg.repo;$('fBranch').value=cfg.branch||'main';$('fToken').value=cfg.token;}
+  if(cfg){$('fOwner').value=cfg.owner;$('fRepo').value=cfg.repo;$('fBranch').value=cfg.branch||'auto';$('fToken').value=cfg.token;}
 }
 function start(){
   $('src').textContent='Memuatkan…';
@@ -465,7 +487,7 @@ function start(){
 }
 $('setup').addEventListener('submit',e=>{
   e.preventDefault();
-  cfg={owner:$('fOwner').value.trim(),repo:$('fRepo').value.trim(),branch:$('fBranch').value.trim()||'main',token:$('fToken').value.trim()};
+  cfg={owner:$('fOwner').value.trim(),repo:$('fRepo').value.trim(),branch:$('fBranch').value.trim()||'auto',v:2,token:$('fToken').value.trim()};
   if(!cfg.owner||!cfg.repo||!cfg.token){showErr('Isi nama akaun, repo dan token.');return;}
   try{localStorage.setItem(KEY,JSON.stringify(cfg));}catch(e){}
   $('setup').style.display='none'; start();
