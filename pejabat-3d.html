@@ -73,15 +73,14 @@ const plates=MEET.map(([x,z,ry])=>{const g=new T.Group();g.position.set(x,.82,z<
 const centre=new T.Group();sc.add(centre);centre.visible=false;cyl(.28,.22,.14,gold,-4.2,.88,4.7,centre);ball(.22,'#d9a04a',-4.2,.93,4.7,centre).scale.y=.55;
 // staff (big-head chibi)
 // Senarai staff. Folder = tempat status.md dibaca (sama cara dengan index.html).
-// Aina, Siti, Nurul, Ahmad, Lina: folder sama seperti index.html. Yuna & Hana: folder BELUM disahkan.
+// Aina, Siti, Nurul, Ahmad, Lina: folder sama seperti index.html. Yuna: yuna-pa (disahkan).
 const STAFF=[
- {key:'yuna',name:'Yuna',role:'PA',folder:'yuna-pa',col:'#c9a65a',hij:1},
- {key:'hana',name:'Hana',role:'Content',folder:'hana-content',col:'#e9a3a0',hij:1},
- {key:'lina',name:'Lina',role:'Social Media',folder:'lina-social',col:'#c98bb0',hij:1},
- {key:'aina',name:'Aina',role:'Support',folder:'aina-support',col:'#ea8f86',hij:1},
- {key:'siti',name:'Siti',role:'Sales & Marketing',folder:'siti-sales',col:'#e7b062',hij:1},
- {key:'nurul',name:'Nurul',role:'Finance',folder:'nurul-finance',col:'#7fb5a8',hij:1},
- {key:'ahmad',name:'Ahmad',role:'Tech',folder:'ahmad-tech',col:'#7d9bd1',hij:0}];
+ {key:'yuna',v:0,name:'Yuna',role:'PA',folder:'yuna-pa',col:'#c9a65a',hij:1},
+ {key:'lina',v:2,name:'Lina',role:'Social Media',folder:'lina-social',col:'#c98bb0',hij:1},
+ {key:'aina',v:3,name:'Aina',role:'Support',folder:'aina-support',col:'#ea8f86',hij:1},
+ {key:'siti',v:4,name:'Siti',role:'Sales & Marketing',folder:'siti-sales',col:'#e7b062',hij:1},
+ {key:'nurul',v:5,name:'Nurul',role:'Finance',folder:'nurul-finance',col:'#7fb5a8',hij:1},
+ {key:'ahmad',v:6,name:'Ahmad',role:'Tech',folder:'ahmad-tech',col:'#7d9bd1',hij:0}];
 const SEAT=[[3.9,4.8,Math.PI],[4.8,4.8,Math.PI],[5.7,4.8,Math.PI],[7.2,2.1,-Math.PI/2],[7.2,3.0,-Math.PI/2],[7.2,3.9,-Math.PI/2],[3,2.9,Math.PI/2]];
 function face(i){const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');
  const iris=['#8a5a2b','#7a3f4d','#5b4a86','#8a4636','#6e5a24','#2f6a5c','#35517f'][i];
@@ -92,13 +91,13 @@ function face(i){const c=document.createElement('canvas');c.width=c.height=256;c
  g.strokeStyle='#a84f48';g.lineWidth=7;g.beginPath();g.arc(128,162,17,.2*Math.PI,.8*Math.PI);g.stroke();
  const t=new T.CanvasTexture(c);t.anisotropy=8;return t}
 const el=(cls,t)=>{const d=document.createElement('div');d.className=cls;d.textContent=t;document.body.append(d);return d};
-const people=STAFF.map(({key,name,role,col,hij},i)=>{const g=new T.Group();sc.add(g);g.scale.setScalar(.88);const body=new T.Group();g.add(body);
+const people=STAFF.map(({key,v,name,role,col,hij},i)=>{const g=new T.Group();sc.add(g);g.scale.setScalar(.88);const body=new T.Group();g.add(body);
  const legs=[-.12,.12].map(x=>{const l=new T.Group();l.position.set(x,.38,0);body.add(l);box(.16,.36,.18,'#8b7a66',0,-.18,0,l);return l});
  cyl(.17,hij?.34:.24,.46,col,0,.6,0,body);cyl(.19,.2,.06,'#fffdf8',0,.82,0,body);ball(.045,gold,0,.74,.22,body);
  const arms=[-.27,.27].map(x=>{const a=new T.Group();a.position.set(x,.78,0);body.add(a);box(.11,.36,.13,col,0,-.15,0,a);ball(.075,'#fbd9c0',0,-.36,0,a);return a});
  const HY=1.3;ball(.46,'#fbd9c0',0,HY,0,body);
- mesh(new T.SphereGeometry(.468,48,32,Math.PI*.22,Math.PI*.56,Math.PI*.34,Math.PI*.42),new T.MeshBasicMaterial({map:face(i),transparent:true,toneMapped:false}),0,HY,0,body).castShadow=false;
- const veil=mat(hij?['#b99455','#e6a3ac','#b8a0d0','#e99a86','#e8b86a','#8cc0ae'][i]:'#4a3326').clone();veil.side=T.DoubleSide;
+ mesh(new T.SphereGeometry(.468,48,32,Math.PI*.22,Math.PI*.56,Math.PI*.34,Math.PI*.42),new T.MeshBasicMaterial({map:face(v),transparent:true,toneMapped:false}),0,HY,0,body).castShadow=false;
+ const veil=mat(hij?['#b99455','#e6a3ac','#b8a0d0','#e99a86','#e8b86a','#8cc0ae'][v]:'#4a3326').clone();veil.side=T.DoubleSide;
  mesh(new T.SphereGeometry(.5,40,24,0,Math.PI*2,0,Math.PI*.31),veil,0,HY+.01,0,body);
  mesh(new T.SphereGeometry(.5,40,24,Math.PI*.82,Math.PI*1.36,Math.PI*.28,Math.PI*(hij?.52:.3)),veil,0,HY+.01,0,body);
  if(hij){cyl(.26,.36,.24,veil,0,.9,-.02,body);const fx=i%2?-.3:.3;for(let k=0;k<5;k++)ball(.045,'#fffdf8',fx+Math.cos(k*1.256)*.055,HY+.34+Math.sin(k*1.256)*.055,.31,body);ball(.035,gold,fx,HY+.34,.345,body)}
@@ -159,7 +158,7 @@ function tick(dt,time){
 const KEY='aiOfficeSettings';
 let cfg=null,activeBranch='main';const shaDate={};
 try{cfg=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
-const DEMO={yuna:['Working','Susun jadual boss'],hana:['Sleeping','-'],aina:['Working','Jawab soalan akses ebook'],siti:['Waiting for OK','Kod diskaun PAYDAY15'],nurul:['Sleeping','-'],lina:['Working','Plan posting Disember'],ahmad:['Working','Betulkan link sales page']};
+const DEMO={yuna:['Working','Susun jadual boss'],aina:['Working','Jawab soalan akses ebook'],siti:['Waiting for OK','Kod diskaun PAYDAY15'],nurul:['Sleeping','-'],lina:['Working','Plan posting Disember'],ahmad:['Working','Betulkan link sales page']};
 const repoUrl=()=>`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/`;
 async function ghApi(path){
  const r=await fetch(repoUrl()+path,{cache:'no-store',headers:{Authorization:'Bearer '+cfg.token,Accept:'application/vnd.github+json'}});
